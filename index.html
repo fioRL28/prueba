@@ -52,9 +52,10 @@
         <img src="img/correo.png" alt="Imagen de correo"> 
     </main>
     <footer class="footer">
-        <div class="footer-container">
-            <p>&copy; 2024 JEMA General Multiservices. Todos los derechos reservados.</p>
-        </div>
+        <p>© <span id="year"></span> JEMA General Multiservices. Todos los derechos reservados.</p>
+        <script>
+            document.getElementById("year").textContent = new Date().getFullYear();
+        </script>
     </footer>
 
 </body>
