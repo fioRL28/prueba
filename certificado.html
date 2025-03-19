@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validar Certificado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        .mensaje {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .valido {
+            color: green;
+            font-weight: bold;
+        }
+        .no-valido {
+            color: red;
+            font-weight: bold;
+        }
+        table {
+            width: 60%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Validar Certificado</h2>
+    <input type="text" id="codigo" placeholder="Ingrese el DNI">
+    <button onclick="validarCertificado()">Validar</button>
+
+    <div id="resultado" class="mensaje"></div>
+
+    <script>
+        async function obtenerDatos() {
+            const url = "https://docs.google.com/spreadsheets/d/1uN1exUTnuIMJNcCYdppv-AXgsStAK7bVFtBcgakEUWU/gviz/tq?tqx=out:json";
+            
+            try {
+                const respuesta = await fetch(url);
+                const texto = await respuesta.text();
+                const json = JSON.parse(texto.substring(47, texto.length - 2)); // Limpiar respuesta
+                
+                // Convertir los datos a un array de objetos
+                const datos = json.table.rows.map(row => ({
+                    dni: row.c[0]?.v,  // Se supone que el DNI está en la primera columna
+                    nombre: row.c[1]?.v,
+                    curso: row.c[2]?.v,
+                    fecha: row.c[3]?.v
+                }));
+
+                return datos;
+            } catch (error) {
+                console.error("Error al obtener los datos:", error);
+                return [];
+            }
+        }
+
+        async function validarCertificado() {
+            const dniIngresado = document.getElementById("codigo").value.trim();
+            const resultadoDiv = document.getElementById("resultado");
+
+            if (!dniIngresado) {
+                resultadoDiv.innerHTML = "<span class='no-valido'>Ingrese un DNI</span>";
+                return;
+            }
+
+            const datos = await obtenerDatos();
+            const certificados = datos.filter(c => c.dni === dniIngresado);
+
+            if (certificados.length > 0) {
+                let tablaHTML = `
+                    <span class='valido'>✅ Certificados válidos</span>
+                    <table>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Curso</th>
+                            <th>Fecha de emisión</th>
+                            
+                        </tr>
+                `;
+
+                certificados.forEach(certificado => {
+                    tablaHTML += `
+                        <tr>
+                            <td>${certificado.nombre}</td>
+                            <td>${certificado.curso}</td>
+                            <td>${formatFecha(certificado.fecha)}</td>
+                        </tr>
+                    `;
+                });
+
+                tablaHTML += `</table>`;
+                resultadoDiv.innerHTML = tablaHTML;
+            } else {
+                resultadoDiv.innerHTML = "<span class='no-valido'>❌ No se encontraron certificados para este DNI</span>";
+            }
+        }
+
+        function formatFecha(fecha) {
+            if (!fecha) return "Fecha no válida";
+            
+            // Si la fecha es un formato de Google Sheets (Date(YYYY,MM,DD))
+            if (typeof fecha === "string" && fecha.includes("Date")) {
+                const valores = fecha.match(/\d+/g);
+                if (valores) {
+                    const anio = valores[0];
+                    const mes = valores[1]; 
+                    const dia = valores[2]; 
+                    return `${dia}/${mes}/${anio}`;
+                }
+            }
+
+            return fecha; // Si ya es una fecha legible, la devuelve tal cual
+        }
+    </script>
+
+</body>
+</html>
+
+
+</body>
+</html>
